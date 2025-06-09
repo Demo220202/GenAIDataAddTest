@@ -15,17 +15,59 @@ def lambda_handler(event, context):
     rds = boto3.client('rds', region_name=region)
     iam = boto3.client('iam')
 
-    def getDbConnection(dbConfig):
-        mydb = mysql.connector.connect(
-            host=dbConfig['host'],
-            user=dbConfig['user'],
-            password=dbConfig['password'],
-            database=dbConfig['database'],
-            # multi = dbConfig['multipleStatements']
-            # client_flags=[ClientFlag.SSL],
-            ssl_ca="certs/rds.pem",
-        )
-        return mydb
+
+
+    def store_or_update_secret(email, region, secret_value):
+        """
+        Create or update a secret in AWS Secrets Manager.
+
+        :param email: User's email address to include in the secret name and description.
+        :param region: AWS region where the secret is associated.
+        :param secret_value: The plain text value to store in the secret.
+        """
+        secret_name = f"zenarate/users/db/{email}"
+        description = f"Giving DB Access of region : {region} to the user - {email}"
+
+        # Initialize the Secrets Manager client
+        session = boto3.Session(profile_name="default", region_name=region)
+        client = session.client("secretsmanager")
+
+        try:
+            # Try to describe the secret to check if it exists
+            client.describe_secret(SecretId=secret_name)
+
+            # If no exception, the secret exists — update it
+            response = client.update_secret(
+                SecretId=secret_name,
+                Description=description,
+                SecretString=secret_value,
+            )
+
+            print(f"Secret '{secret_name}' updated successfully.")
+            print(json.dumps(response, indent=4))
+            return response
+
+        except client.exceptions.ResourceNotFoundException:
+            # Secret does not exist — create it
+            try:
+                response = client.create_secret(
+                    Name=secret_name,
+                    Description=description,
+                    SecretString=secret_value,
+                    Tags=[
+                        {"Key": "org", "Value": "zenarate"},
+                        {"Key": "env", "Value": "users"},
+                    ],
+                )
+                print(f"Secret '{secret_name}' created successfully.")
+                print(json.dumps(response, indent=4))
+                return response
+            except Exception as e:
+                print(f"Error creating secret '{secret_name}': {e}")
+                return None
+        except Exception as e:
+            print(f"Error updating or checking secret '{secret_name}': {e}")
+            return None
 
     # Get the list of all the secrets
     def getAllSecrets(accessList):
@@ -58,16 +100,32 @@ def lambda_handler(event, context):
             print("no secret list found")
 
     # Fetch the secret value from the Secrets Manager
+    def getDbConnection(dbConfig):
+        try:
+            mydb = mysql.connector.connect(
+                host=dbConfig['host'],
+                user=dbConfig['user'],
+                password=dbConfig['password'],
+                database=dbConfig['database'],
+                ssl_ca="certs/rds.pem",
+            )
+            cursor = mydb.cursor()
+            cursor.execute("SELECT 1;")  # <--- Validate DB access
+            cursor.fetchone()
+            cursor.close()
+            return mydb
+        except mysql.connector.Error as err:
+            print(f"Database connection failed for {dbConfig['host']} - {dbConfig['database']}: {err}")  # <---
+            return None  # <--- Handle invalid credentials or unreachable DB
+
+    # Fetch the secret value from the Secrets Manager
     def getSecrets(secret):
         try:
             data = secretsmanager.get_secret_value(SecretId=secret)
-        except Exception as e:
-            data = False
-            print("error in getAllSecrets : ", e)
-        if (data):
             return json.loads(data['SecretString'])
-        else:
-            return None
+        except Exception as e:
+            print(f"Failed to retrieve secret: {secret} -> {e}")  # <---
+            return None  # <---
 
     # Fetch the RDS details for the IAM policy (not the DB credentials)
     def getDBDetails(identifier):
@@ -167,6 +225,9 @@ def lambda_handler(event, context):
         except Exception as e:
             data = False
             print("error in update secret : ", e)
+            print("Creating Secret now!")
+            secret_content = json.dumps(event, separators=(',', ':'))
+            data = store_or_update_secret(event['username'], event['region'], secret_content)
 
         if (data):
             return data
@@ -175,73 +236,65 @@ def lambda_handler(event, context):
 
     def processAcces():
         SecretName = 'zenarate/users/db/' + event['username']
-        secretValue = secretsmanager.get_secret_value(SecretId=SecretName)
-        secretsList = getAllSecrets(event['access'])
-        ExitstingSecret = secretValue['SecretString']
+        try:
+            secretValue = secretsmanager.get_secret_value(SecretId=SecretName)
+            ExitstingSecret = secretValue['SecretString']
+        except:
+            ExitstingSecret = "{}"
         NewSecret = event
         print("UserDBAccessUpdated", "from: ", ExitstingSecret, 'to: ', NewSecret)
 
-        if (secretsList):
-            print("region2: ", region)
-            resourceSet = set()
-            resourceArray = []
-            dbUser = username.replace('.', '').split('@')[0].lower()
-            secret = None
-            print("SecretList: ", secretsList)
-            try:
+        secretsList = getAllSecrets(event['access'])
+        if not secretsList:
+            print("No secrets found.")
+            return
 
-                for secret in secretsList:
-                    cred = getSecrets(secret["Name"])
-                    if (cred):
-                        config = {
-                            "host": cred['host'],
-                            "user": cred['username'],
-                            "password": cred['password'],
-                            "database": cred['dbname'],
-                            # "multipleStatements": True
-                        }
+        resourceSet = set()
+        resourceArray = []
+        dbUser = username.replace('.', '').split('@')[0].lower()
 
-                        # print("Cred: ", cred)
+        for secret in secretsList:
+            cred = getSecrets(secret["Name"])
+            if not cred:
+                print(f"Skipping secret {secret['Name']} due to missing or invalid credentials.")  # <---
+                continue
 
-                        DBDetails = getDBDetails(cred['dbInstanceIdentifier'])
-                        # print("DBDetails: ", DBDetails)
+            config = {
+                "host": cred['host'],
+                "user": cred['username'],
+                "password": cred['password'],
+                "database": cred['dbname'],
+            }
 
-                        if (DBDetails):
-                            resource = "arn:aws:rds-db:{region}:186534707636:dbuser:{DBDetails}/{dbUser}".format(
-                                region=region, DBDetails=DBDetails, dbUser=dbUser)
-                            # To check whether the instance is processed 1st time or not
-                            resourceVal = {'resource': resource, 'dbname': cred['dbname']}
+            dbConn = getDbConnection(config)
+            if not dbConn:
+                print(f"Skipping secret {secret['Name']} due to DB connection failure.")  # <---
+                continue
 
-                            # newInstance = not(resourceVal in resourceArray)
-                            newInstance = not (resource in resourceSet)
+            DBDetails = getDBDetails(cred['dbInstanceIdentifier'])
+            if not DBDetails:
+                print(f"Skipping secret {secret['Name']} due to missing DB instance details.")  # <---
+                dbConn.close()
+                continue
 
-                            # print('newInstance :', newInstance, 'role :', secret["Access"], 'dbUser :', dbUser)
+            resource = f"arn:aws:rds-db:{region}:186534707636:dbuser:{DBDetails}/{dbUser}"
+            resourceVal = {'resource': resource, 'dbname': cred['dbname']}
+            newInstance = resource not in resourceSet
 
-                            if ((not ('instanceType' in cred.keys())) or cred['instanceType'] != 'replica'):
-                                users = processUser(dbUser, secret["Access"], config, newInstance)
-                            else:
-                                print('Resource Type : replica')
-                            resourceSet.add(resource)
-                            resourceArray.append(resourceVal)
-                        else:
-                            print('no DBDetails')
-            except Exception as e:
-                print("error in buiding resourceSet/processUser : ", e)
-            # print("hhhhh: ", resourceSet)
-            if (len(resourceSet) >= 1):
-                print("resourceSet : ", resourceSet)
-                IAMPolicy = getIAMPolicyTemplate(resourceSet)
-                if (IAMPolicy):
-                    print("getIAMPolicyTemplate: ", IAMPolicy)
-                    putUserPolicy = manageIAMPolicy(IAMPolicy)
-                    if (putUserPolicy):
-                        updateduserSecret = updateUserSecret()
-                        if (updateduserSecret):
-                            print("updateduserSecret : ", updateduserSecret)
-
-                            return True
+            if 'instanceType' not in cred or cred['instanceType'] != 'replica':
+                processUser(dbUser, secret["Access"], config, newInstance)
             else:
-                print('no resource in set')
+                print('Resource Type : replica - skipping user creation.')
+
+            resourceSet.add(resource)
+            resourceArray.append(resourceVal)
+            dbConn.close()
+
+        if resourceSet:
+            IAMPolicy = getIAMPolicyTemplate(resourceSet)
+            if IAMPolicy:
+                if manageIAMPolicy(IAMPolicy):
+                    updateUserSecret()
 
     print("event : ", event)
     processAcces()
