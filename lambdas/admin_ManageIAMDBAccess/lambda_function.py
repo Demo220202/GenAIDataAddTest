@@ -115,8 +115,8 @@ def lambda_handler(event, context):
             cursor.close()
             return mydb
         except mysql.connector.Error as err:
-            print(f"Database connection failed for {dbConfig['host']} - {dbConfig['database']}: {err}")  # <---
-            return None  # Handle invalid credentials or unreachable DB
+            print(f"Database connection failed for {dbConfig['host']} - {dbConfig['database']}: {err}")
+            return None  # Handling invalid credentials or unreachable DB
 
     # Fetch the secret value from the Secrets Manager
     def getSecrets(secret):
@@ -256,9 +256,10 @@ def lambda_handler(event, context):
         for secret in secretsList:
             cred = getSecrets(secret["Name"])
             if not cred:
-                print(f"Skipping secret {secret['Name']} due to missing or invalid credentials.")  # <---
+                print(f"Skipping secret {secret['Name']} due to missing or invalid credentials.")  # if required secret doesn't exist
                 continue
 
+            # Else use the values
             config = {
                 "host": cred['host'],
                 "user": cred['username'],
@@ -268,16 +269,16 @@ def lambda_handler(event, context):
 
             dbConn = getDbConnection(config)
             if not dbConn:
-                print(f"Skipping secret {secret['Name']} due to DB connection failure.")  # <---
+                print(f"Skipping secret {secret['Name']} due to DB connection failure.")  # if unable to connect DB, 2 reasons -> db doesn't exist, wrong db name
                 continue
 
             DBDetails = getDBDetails(cred['dbInstanceIdentifier'])
             if not DBDetails:
-                print(f"Skipping secret {secret['Name']} due to missing DB instance details.")  # <---
+                print(f"Skipping secret {secret['Name']} due to missing DB instance details.")  # fetching DB resource ID, if not then continue
                 dbConn.close()
                 continue
 
-            resource = f"arn:aws:rds-db:{region}:186534707636:dbuser:{DBDetails}/{dbUser}"
+            resource = f"arn:aws:rds-db:{region}:186534707636:dbuser:{DBDetails}/{dbUser}" # db resource id used here
             resourceVal = {'resource': resource, 'dbname': cred['dbname']}
             newInstance = resource not in resourceSet
 
