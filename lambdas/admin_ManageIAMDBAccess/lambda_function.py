@@ -29,14 +29,14 @@ def lambda_handler(event, context):
         description = f"Giving DB Access of region : {region} to the user - {email}"
 
         # Initialize the Secrets Manager client
-        session = boto3.Session(profile_name="default", region_name=region)
+        session = boto3.Session(region_name=region)
         client = session.client("secretsmanager")
 
         try:
             # Try to describe the secret to check if it exists
             client.describe_secret(SecretId=secret_name)
 
-            # If no exception, the secret exists — update it
+            # If no exception, the secret exists — just update it :)
             response = client.update_secret(
                 SecretId=secret_name,
                 Description=description,
@@ -48,7 +48,7 @@ def lambda_handler(event, context):
             return response
 
         except client.exceptions.ResourceNotFoundException:
-            # Secret does not exist — create it
+            # Secret does not exist — just create it :)
             try:
                 response = client.create_secret(
                     Name=secret_name,
@@ -110,13 +110,13 @@ def lambda_handler(event, context):
                 ssl_ca="certs/rds.pem",
             )
             cursor = mydb.cursor()
-            cursor.execute("SELECT 1;")  # <--- Validate DB access
+            cursor.execute("SELECT 1;")  # Validate DB access
             cursor.fetchone()
             cursor.close()
             return mydb
         except mysql.connector.Error as err:
             print(f"Database connection failed for {dbConfig['host']} - {dbConfig['database']}: {err}")  # <---
-            return None  # <--- Handle invalid credentials or unreachable DB
+            return None  # Handle invalid credentials or unreachable DB
 
     # Fetch the secret value from the Secrets Manager
     def getSecrets(secret):
@@ -124,8 +124,8 @@ def lambda_handler(event, context):
             data = secretsmanager.get_secret_value(SecretId=secret)
             return json.loads(data['SecretString'])
         except Exception as e:
-            print(f"Failed to retrieve secret: {secret} -> {e}")  # <---
-            return None  # <---
+            print(f"Failed to retrieve secret: {secret} -> {e}")
+            return None  # if secret doesn't exist
 
     # Fetch the RDS details for the IAM policy (not the DB credentials)
     def getDBDetails(identifier):
