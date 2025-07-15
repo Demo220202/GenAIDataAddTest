@@ -15,8 +15,16 @@ pipeline{
                         . venvgenaidata/bin/activate
                         pip install --upgrade pip
                         pip install -r requirements.txt
-                        ACCOUNTS=$(echo "$account_list" | tr ',' ' ')
-                        python3 GenAI_Data_Addition.py --env $env --brand_name "$brand_name" --csbaemail $csbaemail --account_list $ACCOUNTS --scenario "$scenario"
+
+                        # Prepare the account list safely
+                        IFS=',' read -ra ACCOUNTS_ARRAY <<< "$account_list"
+                        ACCOUNT_ARGS=""
+                        for acc in "${ACCOUNTS_ARRAY[@]}"; do
+                            ACCOUNT_ARGS+=" \"$acc\""
+                        done
+
+                        # Run the Python script
+                        eval python3 GenAI_Data_Addition.py --env "$env" --brand_name "$brand_name" --csbaemail "$csbaemail" --account_list $ACCOUNT_ARGS --scenario "$scenario"
                     '''
                 }
             }
