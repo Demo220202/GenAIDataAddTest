@@ -2,6 +2,7 @@ from time import sleep
 from multipleTeamGenAccessToken import *
 import requests
 from rdsConnect import *
+import argparse
 
 def fetch_access_token(domain, user_id, password):
 
@@ -191,11 +192,21 @@ def add_scoring_template_with_categories(access_token, url):
 
 def main():
 
-    env = "prod"
-    brand_name = "Statefarm" # Based on DB Name
-    email = "amitj@zenarate.com" # This user must have access of the brand that we are using right now(team - mandatory)
-    account_list = ["State Farm Enterprise"] # Team
-    scenario_category = "Insurance" # Sales, Marketing
+    parser = argparse.ArgumentParser(description='Arguments for access')
+
+    parser.add_argument('--brand_name', required=True, help='Brand Name as per DB')
+    parser.add_argument('--env', required=True, help='environment - prod, beta, qa, qa2 etc')
+    parser.add_argument('--csbaemail', required=True, help='CS Brand Admin email')
+    parser.add_argument('--account_list', nargs='+', required=True, help='Multiple Account/Teams or single Account/Team')
+    parser.add_argument('--scenario', nargs='+', required=True, help='Scenario Category given by CS')
+
+    args = parser.parse_args()
+
+    env = args.env
+    brand_name = args.brand_name # Based on DB Name
+    email = args.csbaemail # This user must have access of the brand that we are using right now(team - mandatory)
+    account_list = args.account_list # Team
+    scenario_category = args.scenario # Sales, Marketing
 
     data_json = connect_to_rds_and_execute_email(env, brand_name, email)
     #
@@ -220,20 +231,20 @@ def main():
 
         print(f"{data[0]} : {token}")
 
-        print("Adding Scenario Categories...")
-        category_id = add_scenario_category(scenario_category, access_token, domain)
-
-        print("Adding Scenario Templates...")
-        add_scenario_template(category_id, access_token, domain)
-
-        print("Adding Persona Templates...")
-        add_scenario_template_p2(access_token, domain)
-
-        print("Adding Scoring Templates...")
-        add_scoring_template(access_token, domain)
-
-        print("Adding Scoring Templates P2...")
-        add_scoring_template_with_categories(access_token, domain)
+        # print("Adding Scenario Categories...")
+        # category_id = add_scenario_category(scenario_category, access_token, domain)
+        #
+        # print("Adding Scenario Templates...")
+        # add_scenario_template(category_id, access_token, domain)
+        #
+        # print("Adding Persona Templates...")
+        # add_scenario_template_p2(access_token, domain)
+        #
+        # print("Adding Scoring Templates...")
+        # add_scoring_template(access_token, domain)
+        #
+        # print("Adding Scoring Templates P2...")
+        # add_scoring_template_with_categories(access_token, domain)
 
 
     print("Done. Ab Ghar jaao!")
