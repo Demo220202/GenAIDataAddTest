@@ -48,6 +48,10 @@ def get_secret(env):
         secret_name = "zenarate/qa/db/main/root"
         region_name = "us-west-1"
         return fetch_secret(secret_name, region_name)
+    elif env == "qa2":
+        secret_name = "zenarate/qa2/db/main/root"
+        region_name = "us-west-1"
+        return fetch_secret(secret_name, region_name)
 
 # secret_name = "zenarate/prod/db-report-replica/main/root"
 # region_name = "us-west-2"
