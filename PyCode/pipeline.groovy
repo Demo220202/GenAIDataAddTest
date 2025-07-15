@@ -16,15 +16,13 @@ pipeline{
                         pip install --upgrade pip
                         pip install -r requirements.txt
 
-                        # Safely parse account_list
-                        IFS=',' read -ra ACCOUNTS_ARRAY <<< "$account_list"
-
+                        # Convert multi-line account_list into individual quoted args
                         ACCOUNT_ARGS=""
-                        for acc in "${ACCOUNTS_ARRAY[@]}"; do
-                            ACCOUNT_ARGS+=" \"$acc\""
-                        done
+                        while IFS= read -r line; do
+                            ACCOUNT_ARGS+=" \"$line\""
+                        done <<< "$account_list"
 
-                        # Use eval + double quotes around ACCOUNT_ARGS to preserve spacing
+                        # Safely run Python script with proper quoting
                         eval "python3 GenAI_Data_Addition.py --env \\"$env\\" --brand_name \\"$brand_name\\" --csbaemail \\"$csbaemail\\" --account_list $ACCOUNT_ARGS --scenario \\"$scenario\\""
                     '''
                 }
