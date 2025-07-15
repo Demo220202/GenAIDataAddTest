@@ -16,7 +16,7 @@ pipeline{
                         pip install --upgrade pip
                         pip install -r requirements.txt
                         ACCOUNTS=$(echo "$account_list" | tr ',' ' ')
-                        python3 GenAI_Data_Addition.py --env $env --brand_name $brand_name --csbaemail $csbaemail --account_list $ACCOUNTS --scenario $scenario
+                        python3 GenAI_Data_Addition.py --env $env --brand_name "$brand_name" --csbaemail $csbaemail --account_list $ACCOUNTS --scenario "$scenario"
                     '''
                 }
             }
