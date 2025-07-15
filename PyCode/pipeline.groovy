@@ -11,8 +11,8 @@ pipeline{
             steps{
                 dir("PyCode"){
                     sh '''
-                        python3 -m venv venvgenai
-                        . venvgenai/bin/activate
+                        python3 -m venv venvgenaidata
+                        . venvgenaidata/bin/activate
                         pip install --upgrade pip
                         pip install -r requirements.txt
                         ACCOUNTS=$(echo "$account_list" | tr ',' ' ')

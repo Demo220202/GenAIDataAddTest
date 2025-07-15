@@ -1,5 +1,5 @@
 import mysql.connector
-from AzureGenAIResourceRead import *
+# from AzureGenAIResourceRead import *
 from rdsConnectAzure import *
 import json
 
