@@ -231,20 +231,20 @@ def main():
 
         print(f"{data[0]} : {token}")
 
-        # print("Adding Scenario Categories...")
-        # category_id = add_scenario_category(scenario_category, access_token, domain)
-        #
-        # print("Adding Scenario Templates...")
-        # add_scenario_template(category_id, access_token, domain)
-        #
-        # print("Adding Persona Templates...")
-        # add_scenario_template_p2(access_token, domain)
-        #
-        # print("Adding Scoring Templates...")
-        # add_scoring_template(access_token, domain)
-        #
-        # print("Adding Scoring Templates P2...")
-        # add_scoring_template_with_categories(access_token, domain)
+        print("Adding Scenario Categories...")
+        category_id = add_scenario_category(scenario_category, access_token, domain)
+
+        print("Adding Scenario Templates...")
+        add_scenario_template(category_id, access_token, domain)
+
+        print("Adding Persona Templates...")
+        add_scenario_template_p2(access_token, domain)
+
+        print("Adding Scoring Templates...")
+        add_scoring_template(access_token, domain)
+
+        print("Adding Scoring Templates P2...")
+        add_scoring_template_with_categories(access_token, domain)
 
 
     print("Done. Ab Ghar jaao!")
