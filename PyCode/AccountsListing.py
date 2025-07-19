@@ -30,8 +30,8 @@ def convertStringToList(string):
 
     return account_list
 
-inp_str = "Product Enablement, Product Enablement - Test, Product Enablement Europe, Product Enablement - feat"
-
-account_list = convertStringToList(inp_str)
-
-print(account_list)
+# inp_str = "Product Enablement, Product Enablement - Test, Product Enablement Europe, Product Enablement - feat"
+#
+# account_list = convertStringToList(inp_str)
+#
+# print(account_list)
