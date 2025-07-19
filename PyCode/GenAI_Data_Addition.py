@@ -198,8 +198,8 @@ def main():
     parser.add_argument('--brand_name', required=True, help='Brand Name as per DB')
     parser.add_argument('--env', required=True, help='environment - prod, beta, qa, qa2 etc')
     parser.add_argument('--csbaemail', required=True, help='CS Brand Admin email')
-    parser.add_argument('--account_list', nargs='+', required=True, help='Multiple Account/Teams or single Account/Team')
-    parser.add_argument('--scenario', nargs='+', required=True, help='Scenario Category given by CS')
+    parser.add_argument('--account_list', required=True, help='Multiple Account/Teams or single Account/Team')
+    parser.add_argument('--scenario', required=True, help='Scenario Category given by CS')
 
     args = parser.parse_args()
 
@@ -210,7 +210,7 @@ def main():
     print(account_list_str)
     account_list = convertStringToList(account_list_str)
     scenario_category = args.scenario # Sales, Marketing
-    print(scenario_category[0])
+    print(scenario_category)
 
     data_json = connect_to_rds_and_execute_email(env, brand_name, email)
     #
