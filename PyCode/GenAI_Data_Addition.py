@@ -3,6 +3,7 @@ from multipleTeamGenAccessToken import *
 import requests
 from rdsConnect import *
 import argparse
+from AccountsListing import *
 
 def fetch_access_token(domain, user_id, password):
 
@@ -205,7 +206,8 @@ def main():
     env = args.env
     brand_name = args.brand_name # Based on DB Name
     email = args.csbaemail # This user must have access of the brand that we are using right now(team - mandatory)
-    account_list = args.account_list # Team
+    account_list_str = args.account_list # Team
+    account_list = convertStringToList(account_list_str)
     scenario_category = args.scenario # Sales, Marketing
 
     data_json = connect_to_rds_and_execute_email(env, brand_name, email)
@@ -231,20 +233,20 @@ def main():
 
         print(f"{data[0]} : {token}")
 
-        print("Adding Scenario Categories...")
-        category_id = add_scenario_category(scenario_category, access_token, domain)
-
-        print("Adding Scenario Templates...")
-        add_scenario_template(category_id, access_token, domain)
-
-        print("Adding Persona Templates...")
-        add_scenario_template_p2(access_token, domain)
-
-        print("Adding Scoring Templates...")
-        add_scoring_template(access_token, domain)
-
-        print("Adding Scoring Templates P2...")
-        add_scoring_template_with_categories(access_token, domain)
+        # print("Adding Scenario Categories...")
+        # category_id = add_scenario_category(scenario_category, access_token, domain)
+        #
+        # print("Adding Scenario Templates...")
+        # add_scenario_template(category_id, access_token, domain)
+        #
+        # print("Adding Persona Templates...")
+        # add_scenario_template_p2(access_token, domain)
+        #
+        # print("Adding Scoring Templates...")
+        # add_scoring_template(access_token, domain)
+        #
+        # print("Adding Scoring Templates P2...")
+        # add_scoring_template_with_categories(access_token, domain)
 
 
     print("Done. Ab Ghar jaao!")

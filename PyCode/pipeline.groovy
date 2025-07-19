@@ -16,14 +16,10 @@ pipeline{
                         pip install --upgrade pip
                         pip install -r requirements.txt
 
-                        # Convert multi-line account_list into individual quoted args
-                        ACCOUNT_ARGS=""
-                        while IFS= read -r line; do
-                            ACCOUNT_ARGS+=" \"$line\""
-                        done <<< "$account_list"
+                        # Convert comma separated accounts into a list via python script only
 
                         # Safely run Python script with proper quoting
-                        eval "python3 GenAI_Data_Addition.py --env \\"$env\\" --brand_name \\"$brand_name\\" --csbaemail \\"$csbaemail\\" --account_list $ACCOUNT_ARGS --scenario \\"$scenario\\""
+                        python3 GenAI_Data_Addition.py --env $env --brand_name "$brand_name" --csbaemail $csbaemail --account_list "$account_list" --scenario "$scenario"
                     '''
                 }
             }
