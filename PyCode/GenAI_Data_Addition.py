@@ -207,9 +207,10 @@ def main():
     brand_name = args.brand_name # Based on DB Name
     email = args.csbaemail # This user must have access of the brand that we are using right now(team - mandatory)
     account_list_str = args.account_list # Team
+    print(account_list_str)
     account_list = convertStringToList(account_list_str)
     scenario_category = args.scenario # Sales, Marketing
-    print(scenario_category)
+    print(scenario_category[0])
 
     data_json = connect_to_rds_and_execute_email(env, brand_name, email)
     #
