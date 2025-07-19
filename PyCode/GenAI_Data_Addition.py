@@ -209,6 +209,7 @@ def main():
     account_list_str = args.account_list # Team
     account_list = convertStringToList(account_list_str)
     scenario_category = args.scenario # Sales, Marketing
+    print(scenario_category)
 
     data_json = connect_to_rds_and_execute_email(env, brand_name, email)
     #
