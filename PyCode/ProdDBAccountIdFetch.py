@@ -29,7 +29,7 @@ def db_execution(brand_name, user_email, MAIN_DB_CONFIG, BOT_DB_CONFIG, account_
             raise Exception(f"Brand '{brand_name}' not found in main_db.")
 
         brand_id = brand["id"]
-        print(f"✅ Brand ID for '{brand_name}': {brand_id}")
+        print(f"Brand ID for '{brand_name}': {brand_id}")
 
         # Fetch the user_id
         # user_email = "adityap@zenarate.com"
@@ -83,49 +83,6 @@ def db_execution(brand_name, user_email, MAIN_DB_CONFIG, BOT_DB_CONFIG, account_
 
         print(json.dumps(account_access_ids, indent=4))
 
-        ### Step 2: Insert into bot_db service_resources
-
-        # query_variables = getQueryVariables(subscription_id, resource_group_name)
-
-        # for key, value in query_variables.items():
-        #
-        #     resource_name = key
-        #     endpoint = value["endpoint"]
-        #     key = value["keys"]
-        #     region = value["region"].lower()
-        #     type = value["type"]
-        #
-        #     insert_service_resource = """
-        #     INSERT INTO service_resources (brand_id, service, resource_type, resource, resource_id, region, endpoint, `key`)
-        #     VALUES (%s, 'Azure', %s, %s, %s, %s, %s, %s)
-        #     """
-        #
-        #     bot_cursor.execute(insert_service_resource, (brand_id, type, resource_name, resource_name, region, endpoint, key))
-        #     bot_db_conn.commit()
-        #     print("✅ Inserted into service_resources.")
-        #
-        #     ### Step 3: Fetch newly inserted resource ID
-        #     bot_cursor.execute(
-        #         "SELECT id FROM service_resources WHERE brand_id = %s AND resource = %s",
-        #         (brand_id, resource_name)
-        #     )
-        #     resource = bot_cursor.fetchone()
-        #
-        #     if not resource:
-        #         raise Exception("❌ Error: Resource ID not found after insert.")
-        #
-        #     resource_id = resource["id"]
-        #     print(f"✅ Fetched Resource ID: {resource_id}")
-        #
-        #     ### Step 4: Insert into resource_model
-        #     insert_resource_model = """
-        #     INSERT INTO resource_model (model_type, model_name, resource_id, inactive, created_by, updated_by)
-        #     VALUES ('Deployment', 'gpt-4o', %s, 0, %s, %s)
-        #     """
-        #
-        #     bot_cursor.execute(insert_resource_model, (resource_id, user_id, user_id))
-        #     bot_db_conn.commit()
-        #     print("✅ Inserted into resource_model.")
 
     except Exception as e:
         print(f"❌ Error: {e}")
